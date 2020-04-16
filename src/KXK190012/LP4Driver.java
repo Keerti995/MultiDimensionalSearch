@@ -21,11 +21,10 @@ public class LP4Driver {
         long lineno = 0;
 
         MDS mds = new MDS();
-        Timer timer = new Timer();
         long id, result, total = 0;
         MDS.Money price;
         List<Long> name = new LinkedList<>();
-
+        Timer timer = new Timer();
         whileloop:
         while (in.hasNext()) {
             lineno++;
@@ -48,26 +47,33 @@ public class LP4Driver {
                         else { name.add(val); }
                     }
                     result = mds.insert(id, price, name);
+                    System.out.println(result);
                     break;
                 case "Find":
                     id = in.nextLong();
                     result = mds.find(id).dollars();
+                    System.out.println(result);
                     break;
                 case "Delete":
                     id = in.nextLong();
                     result = mds.delete(id);
+                    System.out.println(result);
                     break;
                 case "FindMinPrice":
                     result = mds.findMinPrice(in.nextLong()).dollars();
+                    System.out.println(result);
                     break;
                 case "FindMaxPrice":
                     result = mds.findMaxPrice(in.nextLong()).dollars();
+                    System.out.println(result);
                     break;
                 case "FindPriceRange":
                     result = mds.findPriceRange(in.nextLong(), new MDS.Money(in.next()), new MDS.Money(in.next()));
+                    System.out.println(result);
                     break;
                 case "PriceHike":
                     result = mds.priceHike(in.nextLong(), in.nextLong(), in.nextDouble()).dollars();
+                    System.out.println(result);
                     break;
                 case "RemoveNames":
                     id = in.nextLong();
@@ -78,6 +84,7 @@ public class LP4Driver {
                         else { name.add(val); }
                     }
                     result = mds.removeNames(id, name);
+                    System.out.println(result);
                     break;
                 default:
                     System.out.println("Unknown operation: " + operation);
