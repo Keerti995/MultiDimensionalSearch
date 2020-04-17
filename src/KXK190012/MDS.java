@@ -7,7 +7,7 @@ import java.util.*;
  */
 public class MDS {
     HashMap<Long, MDSEntry> itemTable;                      //stores the Item ID - key , Item info - value
-    HashMap<Long, TreeMap<Long,Money>> descTable;           //stores the Item ID - key , Map(Item ID-key , Item Price-value)
+    HashMap<Long, TreeMap<Long,Money>> descTable;           //stores the Desc - key , Map(Item ID-key , Item Price-value)
 
     /**
      * MDSEntry class stores the Item information like Item ID, Description, Price
@@ -63,7 +63,7 @@ public class MDS {
             } else if (itemTable.get(e1).price.compareTo(itemTable.get(e2).price) < 0) {
                 return -1;
             } else {
-                return 0;
+                return e1.compareTo(e2);
             }
         }
     }
@@ -86,7 +86,7 @@ public class MDS {
         ArrayList<Long> localList = new ArrayList<>(list);
         MDSEntry newEntry = new MDSEntry(id,localList,price);
         if(itemTable.containsKey(id)){
-            if(list.size() == 0){
+            if(list.size() == 0 || list == null){
                 localList = itemTable.get(id).description;
             }
             delete(id);
@@ -126,7 +126,7 @@ public class MDS {
        or 0, if such an id did not exist.
     */
     public long delete(long id) {
-        MDSEntry entry = itemTable.get(id);
+        MDSEntry entry = itemTable.getOrDefault(id,null);
         if(entry ==  null){
             return 0;
         }else{
@@ -183,11 +183,20 @@ public class MDS {
             return 0;
         TreeMap<Long,Money> tmap = descTable.get(n);
         int count = 0;
-        for(Money price : tmap.values()){
+
+        /*for(Money price : tmap.entrySet()){
+            if(n == 190L)
+                System.out.println("### PRICE "+price);
             if(price.compareTo(low) >=0 && price.compareTo(high) <=0 ){
                 count++;
             }
+        }*/
+        for(Map.Entry<Long,Money> entry : tmap.entrySet()){
+
+            if(entry.getValue().compareTo(low) >= 0 && entry.getValue().compareTo(high) <= 0)
+                count++;
         }
+
         return count;
     }
 
@@ -207,16 +216,18 @@ public class MDS {
                 price += increase;
                 int cents = (int) price % 100;
                 long dollar = price / 100;
-                entry.price = new Money(dollar,cents);
+
                 netIncrease+= increase;
 
                 for(Long desc:entry.description){
                     if(descTable.containsKey(desc)){
                         if(descTable.get(desc).containsKey(id)){
+                            descTable.get(desc).remove(id);
                             descTable.get(desc).put(id,entry.price);
                         }
                     }
                 } //updated the price in all description values in this for loop
+                entry.price = new Money(dollar,cents);
             }
         }
         int cents = (int) netIncrease % 100;
