@@ -23,7 +23,6 @@ public class MDS {
             this.price = price;
 
         }
-
     }
 
     /**
@@ -174,7 +173,6 @@ public class MDS {
     */
     public Money findMaxPrice(long n) {
         if(descriptionMap.containsKey(n)){
-            //return descTable.get(n).lastEntry().getValue();
             return itemMap.get(descriptionMap.get(n).lastKey()).price;
         }else
             return new Money("0.0");
