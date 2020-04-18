@@ -1,80 +1,80 @@
-/**
- * @author
- */
 package KXK190012;
 
 import java.util.*;
 
 /**
- * MDS class stores the Item information and its behavior like price hike, removal and addition of Items etc.
+ * MDS class stores the Item information mapping and description mapping
  */
 public class MDS {
-    HashMap<Long, MDSEntry> itemTable;                      //stores the Item ID - key , Item info - value
-    HashMap<Long, TreeMap<Long,Money>> descTable;           //stores the Desc - key , Map(Item ID-key , Item Price-value)
+    HashMap<Long, Entry> itemMap;                      //stores the Item ID - key , Item info - value
+    HashMap<Long, TreeMap<Long,Money>> descriptionMap; //stores the Description - key , Map(Item ID-key , Item Price-value)
 
     /**
      * MDSEntry class stores the Item information like Item ID, Description, Price
      */
-    private class MDSEntry{
+    private class Entry {
         long id;
         ArrayList<Long> description;
         Money price;
 
-        public MDSEntry(long id, ArrayList<Long> description,Money price){
+        public Entry(long id, ArrayList<Long> description, Money price){
             this.id = id;
             this.description = description;
             this.price = price;
 
         }
-
     }
 
     /**
-     * PriceComparator class compares the prices of 2 Items and returns 1 if price of Item o1>o2, -1 if price of Item o1<o2, 0 if both have equal prices
+     * Orders the Items in the TreeMap using prices of the Items stored in the key
      */
-    class PriceComparator implements Comparator<MDSEntry> {
-
+    class TreeMapPriceComparator implements Comparator<Long> {
         @Override
-        public int compare(MDSEntry o1, MDSEntry o2) {
-            if(o1.price.compareTo(o2.price) == 0)
+        public int compare(Long id1, Long id2) {
+            if(itemMap.get(id2)==null)
+                return 0;
+            if (itemMap.get(id1).price.compareTo(itemMap.get(id2).price) > 0){
+                return 1;
+            } else if (itemMap.get(id1).price.compareTo(itemMap.get(id2).price) < 0) {
                 return -1;
-            return o1.price.compareTo(o2.price);
+            } else {
+                return id1.compareTo(id2);
+            }
         }
-
     }
 
     /**
      * IDComparator compares the IDs of 2 items
      */
-    class IDComparator implements Comparator<MDSEntry>{
+    class IDComparator implements Comparator<Entry>{
 
         @Override
-        public int compare(MDSEntry o1, MDSEntry o2) {
-            return Long.compare(o1.id,o2.id);
+        public int compare(Entry entry1, Entry entry2) {
+            return Long.compare(entry1.id,entry2.id);
         }
 
     }
+
 
     /**
-     * Orders the Items in the Map using prices of the Items stored in the key
+     * PriceComparator class compares the prices of 2 Items and returns 1 if price of Item o1>o2, -1 if price of Item o1<o2, 0 if both have equal prices
      */
-    class byValue implements Comparator<Long> {
+    class PriceComparator implements Comparator<Entry> {
+
         @Override
-        public int compare(Long e1, Long e2) {
-            if (itemTable.get(e1).price.compareTo(itemTable.get(e2).price) > 0){
-                return 1;
-            } else if (itemTable.get(e1).price.compareTo(itemTable.get(e2).price) < 0) {
+        public int compare(Entry entry1, Entry entry2) {
+            if(entry1.price.compareTo(entry2.price) == 0)
                 return -1;
-            } else {
-                return e1.compareTo(e2);
-            }
+            return entry1.price.compareTo(entry2.price);
         }
+
     }
+
 
     // Constructors
     public MDS() {
-        this.itemTable = new HashMap<>();
-        this.descTable = new HashMap<>();
+        this.itemMap = new HashMap<>();
+        this.descriptionMap = new HashMap<>();
     }
 
     /* Public methods of MDS. Do not change their signatures.
@@ -85,26 +85,28 @@ public class MDS {
        is null or empty, in which case, just the price is updated.
        Returns 1 if the item is new, and 0 otherwise.
     */
+
     public int insert(long id, Money price, List<Long> list) {
-        ArrayList<Long> localList = new ArrayList<>(list);
-        MDSEntry newEntry = new MDSEntry(id,localList,price);
-        if(itemTable.containsKey(id)){
+
+        ArrayList<Long> arrayList = new ArrayList<>(list);
+        Entry newEntry = new Entry(id,arrayList,price);
+
+        if(itemMap.containsKey(id)){
             if(list.size() == 0 || list == null){
-                localList = itemTable.get(id).description;
+                arrayList = itemMap.get(id).description;
             }
             delete(id);
-            insert(id,price,localList);
+            insert(id,price,arrayList);
             return 0;
         }else{
-            itemTable.put(id,newEntry);
-            for(Long desc : localList){
-                //LinkedList<Long> set = descTable.get(desc);
-                TreeMap<Long,Money> tmap = descTable.get(desc);
+            itemMap.put(id,newEntry);
+            for(Long desc : arrayList){
+                TreeMap<Long,Money> tmap = descriptionMap.get(desc);
                 if(tmap == null){
-                    byValue cmp = new byValue();
-                    TreeMap<Long,Money> newtmap = new TreeMap<Long,Money>(cmp);
+                    TreeMapPriceComparator comparator = new TreeMapPriceComparator();
+                    TreeMap<Long,Money> newtmap = new TreeMap<Long,Money>(comparator);
                     newtmap.put(id,price);
-                    descTable.put(desc, newtmap);
+                    descriptionMap.put(desc, newtmap);
                 }else{
                     tmap.put(id,price);
                 }
@@ -115,7 +117,7 @@ public class MDS {
 
     // b. Find(id): return price of item with given id (or 0, if not found).
     public Money find(long id) {
-        MDSEntry entry = itemTable.get(id);
+        Entry entry = itemMap.get(id);
         if(entry != null){
             return entry.price;
         }else{
@@ -129,23 +131,23 @@ public class MDS {
        or 0, if such an id did not exist.
     */
     public long delete(long id) {
-        MDSEntry entry = itemTable.getOrDefault(id,null);
+        Entry entry = itemMap.getOrDefault(id,null);
         if(entry ==  null){
             return 0;
         }else{
             long sum = 0;
             for(Long desc : entry.description){
-                TreeMap<Long,Money> tmap = descTable.get(desc);
+                TreeMap<Long,Money> tmap = descriptionMap.get(desc);
                 if(tmap!=null){
                     sum += desc;
                     if (tmap.size() > 1) {
                         tmap.remove(entry.id);
                     } else {
-                        descTable.remove(desc);
+                        descriptionMap.remove(desc);
                     }
                 }
             }
-            itemTable.remove(id);
+            itemMap.remove(id);
             return sum;
         }
     }
@@ -158,8 +160,8 @@ public class MDS {
        Return 0 if there is no such item.
     */
     public Money findMinPrice(long n) {
-        if(descTable.containsKey(n)){
-            return descTable.get(n).firstEntry().getValue();
+        if(descriptionMap.containsKey(n)){
+            return descriptionMap.get(n).firstEntry().getValue();
         }else
             return new Money("0.0");
     }
@@ -170,8 +172,8 @@ public class MDS {
        Return 0 if there is no such item.
     */
     public Money findMaxPrice(long n) {
-        if(descTable.containsKey(n)){
-            return descTable.get(n).lastEntry().getValue();
+        if(descriptionMap.containsKey(n)){
+            return itemMap.get(descriptionMap.get(n).lastKey()).price;
         }else
             return new Money("0.0");
     }
@@ -184,16 +186,9 @@ public class MDS {
     public int findPriceRange(long n, Money low, Money high) {
         if(low.compareTo(high) >0 )
             return 0;
-        TreeMap<Long,Money> tmap = descTable.get(n);
+        TreeMap<Long,Money> tmap = descriptionMap.get(n);
         int count = 0;
 
-        /*for(Money price : tmap.entrySet()){
-            if(n == 190L)
-                System.out.println("### PRICE "+price);
-            if(price.compareTo(low) >=0 && price.compareTo(high) <=0 ){
-                count++;
-            }
-        }*/
         for(Map.Entry<Long,Money> entry : tmap.entrySet()){
 
             if(entry.getValue().compareTo(low) >= 0 && entry.getValue().compareTo(high) <= 0)
@@ -210,9 +205,9 @@ public class MDS {
     */
     public Money priceHike(long l, long h, double rate) {
         long netIncrease = 0;
-        for (Map.Entry<Long, MDSEntry> item : itemTable.entrySet()) {
+        for (Map.Entry<Long, Entry> item : itemMap.entrySet()) {
             Long id = item.getKey();
-            MDSEntry entry = item.getValue();
+            Entry entry = item.getValue();
             if(id >= l && id <= h){
                 long price = entry.price.d * 100 + entry.price.c;
                 long increase = (long) (price * rate / 100);
@@ -221,16 +216,17 @@ public class MDS {
                 long dollar = price / 100;
 
                 netIncrease+= increase;
-
+            //update the price in all description values in this for loop
                 for(Long desc:entry.description){
-                    if(descTable.containsKey(desc)){
-                        if(descTable.get(desc).containsKey(id)){
-                            descTable.get(desc).remove(id);
-                            descTable.get(desc).put(id,entry.price);
+                    if(descriptionMap.containsKey(desc)){
+                        if(descriptionMap.get(desc).containsKey(id)){
+                            descriptionMap.get(desc).remove(id);
+                            descriptionMap.get(desc).put(id,new Money(dollar,cents));
                         }
                     }
-                } //updated the price in all description values in this for loop
+                }
                 entry.price = new Money(dollar,cents);
+                itemMap.put(id,entry);
             }
         }
         int cents = (int) netIncrease % 100;
@@ -245,12 +241,12 @@ public class MDS {
       deleted from the description of id.  Return 0 if there is no such id.
     */
     public long removeNames(long id, java.util.List<Long> list) throws IllegalAccessException {
-        MDSEntry entry = itemTable.get(id);
+        Entry entry = itemMap.get(id);
         long sum = 0;
         for(Long desc : list){
-            if(descTable.containsKey(desc)){
-                if(descTable.get(desc).containsKey(id)){
-                    descTable.get(desc).remove(id);
+            if(descriptionMap.containsKey(desc)){
+                if(descriptionMap.get(desc).containsKey(id)){
+                    descriptionMap.get(desc).remove(id);
                     sum += desc;
                 }
             }
@@ -273,6 +269,7 @@ public class MDS {
         }
         public long dollars() { return d; }
         public int cents() { return c; }
+
         public int compareTo(Money other) { // Complete this, if needed
             int compare = Long.compare(this.d,other.d);
             if( compare != 0){
@@ -282,31 +279,6 @@ public class MDS {
             }
         }
         public String toString() { return d + "." + c; }
-    }
-
-    public static void main(String[] args) throws IllegalAccessException {
-        MDS mds = new MDS();
-        LinkedList<Long> list = new LinkedList<>();
-        list.add(0L);
-        list.add(1L);
-//        for(int i = 1 ; i < 11; i++){
-//            System.out.println(i+" "+mds.insert(i,new Money(i,0),list));
-//        }
-//        System.out.println("11 "+mds.insert(1,new Money(12,0),list));
-////        TreeMap<Long,Money> tmap = mds.descTable.get(0L);
-////        System.out.println(tmap.firstEntry().getValue());
-////        System.out.println(tmap.lastEntry().getValue());
-////        System.out.println(mds.delete(1));
-////        System.out.println(mds.find(1));
-//        System.out.println(mds.findMinPrice(0));
-//        System.out.println(mds.findMaxPrice(1));
-//        System.out.println(mds.priceHike(1,2,10));
-//        System.out.println(mds.findPriceRange(0,new Money("1.10"),new Money("2.20")));
-//        System.out.println(mds.removeNames(1,list));
-
-//        Money m1 = new Money("10000.10");
-//        Money m2 = new Money("2.80");
-//        System.out.println(m1.compareTo(m2));
     }
 
 }
